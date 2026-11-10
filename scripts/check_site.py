@@ -14,6 +14,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if "--root" in sys.argv:                         # z. B. die gebaute Seite in _site/ prüfen
+    ROOT = Path(sys.argv[sys.argv.index("--root") + 1]).resolve()
 BASE = "https://youtubeemo.github.io/gta-shorts-website/"
 PAGES = ["index.html", "datenschutz.html", "nutzungsbedingungen.html", "impressum.html", "404.html"]
 
@@ -56,6 +58,7 @@ def main() -> int:
     ap.add_argument("--live", action="store_true")
     ap.add_argument("--allow-placeholders", action="store_true")
     ap.add_argument("--offline", action="store_true", help="externe Links nicht abrufen")
+    ap.add_argument("--root", default="", help="zu prüfender Ordner (Standard: Repository)")
     args = ap.parse_args()
     errors, external = [], set()
     parsed = {p: parse(ROOT / p) for p in PAGES}
@@ -95,6 +98,20 @@ def main() -> int:
             print(("✅" if code == 200 else "❌"), code, BASE + page)
             if code != 200:
                 errors.append(f"Live-Seite nicht erreichbar ({code}): {BASE + page}")
+            else:
+                body = urllib.request.urlopen(BASE + page, timeout=25).read().decode("utf-8", "ignore")
+                if re.search(r"\{\{[A-Z_]+\}\}", body):
+                    errors.append(f"Live-Seite enthält Platzhalter: {BASE + page}")
+        plain = "http://youtubeemo.github.io/gta-shorts-website/"
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(plain, headers={"User-Agent": "Mozilla/5.0"}),
+                                       timeout=25)
+            https_ok = r.geturl().startswith("https://")
+        except Exception:
+            https_ok = False
+        print(("✅" if https_ok else "❌"), "http:// wird auf https:// umgeleitet")
+        if not https_ok:
+            errors.append("http:// leitet nicht auf https:// um – in Settings → Pages 'Enforce HTTPS' anhaken")
     for e in errors:
         print("❌", e)
     print("Ergebnis:", "OK" if not errors else f"{len(errors)} Fehler")

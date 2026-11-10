@@ -1,0 +1,69 @@
+# Baut die Website mit den Pflichtangaben aus den Repository-Variablen und veröffentlicht sie
+# über GitHub Pages (HTTPS). Die persönlichen Angaben stehen NICHT im Repository.
+#
+# Einmalig: Settings → Pages → Build and deployment → Source: "GitHub Actions"
+#           Settings → Secrets and variables → Actions → Variables:
+#             IMPRESSUM_NAME, IMPRESSUM_STRASSE, IMPRESSUM_PLZ_ORT, KONTAKT_EMAIL, (optional) KANAL_URL
+name: Website veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "41 6 * * 1"     # montags: Links und Erreichbarkeit erneut prüfen
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Website bauen (Pflichtangaben aus Variablen einsetzen)
+        env:
+          IMPRESSUM_NAME: ${{ vars.IMPRESSUM_NAME }}
+          IMPRESSUM_STRASSE: ${{ vars.IMPRESSUM_STRASSE }}
+          IMPRESSUM_PLZ_ORT: ${{ vars.IMPRESSUM_PLZ_ORT }}
+          KONTAKT_EMAIL: ${{ vars.KONTAKT_EMAIL }}
+          KANAL_URL: ${{ vars.KANAL_URL }}
+        run: python scripts/build_site.py
+      - name: Links, Anker und Platzhalter prüfen
+        run: python scripts/check_site.py --root _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  live-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Live-Seite über HTTPS prüfen
+        run: |
+          sleep 45
+          python scripts/check_site.py --offline --live --allow-placeholders

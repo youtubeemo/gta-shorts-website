@@ -11,6 +11,17 @@
 Statisches HTML/CSS, gehostet mit GitHub Pages (kostenlos, HTTPS). Keine Cookies, keine Tracker,
 keine externen Schriften. Schrift „Anton“ unter SIL Open Font License (`assets/fonts/OFL-Anton.txt`).
 
-Prüfung: `python scripts/check_site.py` (Workflow „Website prüfen“ läuft bei jeder Änderung).
+## Veröffentlichung
+
+Workflow **„Website veröffentlichen“** (`.github/workflows/pages.yml`) baut die Seite, setzt die Pflichtangaben
+ein, prüft alle Links und veröffentlicht über GitHub Pages (HTTPS). Danach wird die Live-Seite geprüft.
+
+Einmalige Einstellungen:
+1. **Settings → Pages → Build and deployment → Source: „GitHub Actions“**
+2. **Settings → Secrets and variables → Actions → Variables** – Pflichtangaben für Impressum/Datenschutz
+   (stehen bewusst NICHT im Repository):
+   `IMPRESSUM_NAME`, `IMPRESSUM_STRASSE`, `IMPRESSUM_PLZ_ORT`, `KONTAKT_EMAIL`, optional `KANAL_URL`
+
+Fehlt eine Pflichtangabe, wird nichts veröffentlicht.
 
 Inoffizielles Fan-Projekt – keine Verbindung zu Rockstar Games, Take-Two Interactive, Google oder YouTube.
