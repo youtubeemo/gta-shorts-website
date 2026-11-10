@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://youtubeemo.github.io/gta-shorts-website/sitemap.xml

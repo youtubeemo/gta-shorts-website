@@ -1,0 +1,26 @@
+name: Website prüfen
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 6 * * 1"     # montags: alle Links erneut prüfen
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dateien, Links und Platzhalter prüfen
+        run: python scripts/check_site.py
+      - name: Live-Seite per HTTPS prüfen
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sleep 60   # GitHub Pages braucht nach einem Push etwa eine Minute
+          python scripts/check_site.py --live
